@@ -15,22 +15,22 @@ T2  = 100;
  
 %% Definindo a malha
 
-% n� de VC's nas dire��es x e y
+% nº de VC's nas direções x e y
 nx = 50; 
 ny = 50; 
 
-% n� total de VC's
+% nº total de VC's
 vc = nx*ny;
 
-% Dimens�es dos VC's
+% Dimensoes dos VC's
 dx = L/nx;
 dy = W/ny;
 
-%% Constru��o do Dom�nio (coeficientes)
+%% Construçoẽs do Domínio (coeficientes)
 
 row = ny; col = nx;
 
-% Fun��es auxiliares
+% Funções auxiliares
 ij = @(k,n) 1 + k*(n - 1);
 i  = @(k) ij(k,row); 
 j  = @(k) ij(k,col); 
@@ -62,12 +62,12 @@ for k = 0:1
     ap(i(k),:)   = ap(i(k),:) + 2*Ans;  % Adicionando o termo Sp
     ap(:,j(k))   = ap(:,j(k)) + 2*Awe;
     
-    if k == 0                           % Constru��o do termo fonte
+    if k == 0                           % Construção do termo fonte
         Su(i(k),:)   = Su(i(k),:) + 2*T2; 
     end
     Su(:,j(k))   = Su(:,j(k)) + 2*T1;
 end
-%% Solu��o pela inversa
+%% Solução pela inversa
 tic
 % Matrizes de Coeficientes Tranpostas
 awT = aw'; aeT = ae';
@@ -94,7 +94,7 @@ for i=1:vc
     end
 end
 
-% Solu��o do problema
+% Solução do problema
 T_inv = M^(-1)*SuT;
 
 tempo_inv = toc;
@@ -105,15 +105,16 @@ Aj = zeros(row,col);
 Cj = zeros(row,col);
 Clj= zeros(row,col);
 
-% Incializa��o do campo da propriedade phi
+% Incialização do campo da propriedade phi
 phi = 100*zeros(row, col);
 
-% Iniciando os residuos e itera��es
+% Iniciando os residuos e iterações
 ResG     = [];                  % Global
 ResI     = zeros(row,col);      % Matriz de residuo local
 iter     = 0; 
-ResImax   = []; 
-% Toler�ncia do TDMA
+ResImax   = [];
+ 
+% Tolerância do TDMA
 tol = 1e-3;
 CP  = 1; % Crit�rio de Parada 
 
@@ -136,7 +137,7 @@ while(CP >= tol)
         
         %%%% Varredura dos vc's na linha i no sentido: Oeste->Leste %%%%
         for j = 1:col
-            k = col - (j-1);        % �ndice para o back substitution 
+            k = col - (j-1);        % índice para o back substitution 
             
             if j == 1               % Extremo Oeste da Malha
                 phi_w   = 0;
@@ -171,16 +172,16 @@ while(CP >= tol)
         end 
     end
     
-                %%%% Atualiza o Crit�rio de Parada %%%%
+                %%%% Atualiza o Critério de Parada %%%%
     CP  = max(max(ResI.^2)); 
     
-        %%%% Atualiza a itera��o e Calculo dos Residuos %%%%
+        %%%% Atualiza a iteração e Calculo dos Residuos %%%%
     iter            = iter + 1; 
     ResG(iter)      = sum(sum(abs(ResI)));
     ResImax(iter)   = CP;
 end
 tempo_tdma = toc;
-%% Solu��o Anal�tica
+%% Solução Analítica
 T = zeros(row,col);
 
 x_cont = col; %contador de VCs x
@@ -202,7 +203,7 @@ for x = (dx/2:dx:L-dx/2)
 y_cont = row;
 x_cont = x_cont -1;
 end
-%% Plot Solu��o pela inversa
+%% Plot Solução pela inversa
 Temp_fig = figure('Units','normalized');
 imagesc(reshape(T_inv,row,col)')
 colorbar;
@@ -212,7 +213,7 @@ title('Temperatura (�C) - Invers�o de matriz')
 xlabel('x [m]')
 ylabel('y [m]')
 
-%% Plot Solu��o TDMA
+%% Plot Solução TDMA
 Temp_fig = figure('Units','normalized');
 imagesc(reshape(phi',row,col)')
 colorbar;
@@ -235,7 +236,7 @@ xlabel('Itera��es');
 ylabel('Residuo Local ao quadrado');
 grid()
 
-%% Plot Solu��o Anal�tica
+%% Plot Solução Analítica
 Temp_fig = figure('Units','normalized');
 imagesc(reshape(T',row,col));
 colorbar;
@@ -243,7 +244,7 @@ axis ij;
 title('Solu��o anal�tica');
 xlabel('x [m]');
 ylabel('y [m]');
-%% Plot Erro com Anal�tica
+%% Plot Erro com Analítica
 Temp_fig = figure('Units','normalized');
 erro = reshape(T',row,col) - phi;
 imagesc(erro)
