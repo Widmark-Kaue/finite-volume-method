@@ -7,17 +7,17 @@ Aj = zeros(row,col);
 Cj = zeros(row,col);
 Clj= zeros(row,col);
 
-% Incialização do campo da propriedade phi
+% Incializacao do campo da propriedade phi
 phi = zeros(row, col);
 
-% Iniciando os residuos e iterações
+% Iniciando os residuos e iteracoes
 ResG     = [];                  % Global
 ResI     = zeros(row,col);      % Matriz de residuo local
-iter     = 0; 
-ResImax  = []; 
-% Tolerância do TDMA
+iter     = 0;
+ResImax  = [];
+% Tolerancia do TDMA
 tol = 1e-3;
-CP  = 1; % Critério de Parada 
+CP  = 1; % Criterio de Parada
 
 while(CP >= tol)
         %%%% Varredura linha-a-linha da malha sentido: Norte->Sul %%%%
@@ -38,7 +38,7 @@ while(CP >= tol)
         
         %%%% Varredura dos vc's na linha i no sentido: Oeste->Leste %%%%
         for j = 1:col
-            k = col - (j-1);        % índice para o back substitution 
+            k = col - (j-1);        % indice para o back substitution 
             
             if j == 1               % Extremo Oeste da Malha
                 phi_w   = 0;
@@ -73,10 +73,10 @@ while(CP >= tol)
         end 
     end
     
-                %%%% Atualiza o Critério de Parada %%%%
+                %%%% Atualiza o Criterio de Parada %%%%
     CP  = max(max(ResI.^2)); 
     
-        %%%% Atualiza a iteração e Calculo dos Residuos %%%%
+        %%%% Atualiza a iteracao e Calculo dos Residuos %%%%
     iter            = iter + 1; 
     ResG(iter)      = sum(sum(abs(ResI)));
     ResImax(iter)   = CP;
