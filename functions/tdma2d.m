@@ -1,7 +1,18 @@
 %% TDMA
-function [phi,iter,ResImax,tempo_tdma] = tdma2d(ap,an,as,aw,ae,Su)
+%{
+INSTRUCOES:
+------------
+Para utilizar essa função no MATLAB do terminal remoto da USFC este
+arquivo de função <tdma2d.m> deve ser copiado para o seguinte 
+diretório:
+
+/Este Computador/Documentos/MATLAB/
+
+%}
+function [phi,iter, Res, tempo_tdma] = tdma2d(ap,an,as,aw,ae,Su)
 tic
 [row, col] = size(ap);
+
 % Coeficientes do TDMA
 Aj = zeros(row,col);
 Cj = zeros(row,col);
@@ -13,13 +24,19 @@ phi = zeros(row, col);
 % Iniciando os residuos e iteracoes
 ResG     = [];                  % Global
 ResI     = zeros(row,col);      % Matriz de residuo local
-iter     = 0;
-ResImax  = [];
+iter     = 0; 
+ResImax  = []; 
+ResN     = [];
 % Tolerancia do TDMA
-tol = 1e-3;
-CP  = 1; % Criterio de Parada
-
-while(CP >= tol)
+mi_ap = min(min(ap));
+if mi_ap < 1
+    tol = 1e-3*mi_ap;
+else
+    tol = 1e-3;
+end
+CP1  = 1; % Criterio de Parada 
+CP2  = 1;
+while(CP1 >= tol || CP2 >= tol)
         %%%% Varredura linha-a-linha da malha sentido: Norte->Sul %%%%
     for i=1:row        
         if i == 1                   % Extremo Norte da Malha
@@ -38,7 +55,7 @@ while(CP >= tol)
         
         %%%% Varredura dos vc's na linha i no sentido: Oeste->Leste %%%%
         for j = 1:col
-            k = col - (j-1);        % indice para o back substitution 
+            k = col - (j-1);        % índice para o back substitution 
             
             if j == 1               % Extremo Oeste da Malha
                 phi_w   = 0;
@@ -73,14 +90,20 @@ while(CP >= tol)
         end 
     end
     
-                %%%% Atualiza o Criterio de Parada %%%%
-    CP  = max(max(ResI.^2)); 
     
         %%%% Atualiza a iteracao e Calculo dos Residuos %%%%
     iter            = iter + 1; 
     ResG(iter)      = sum(sum(abs(ResI)));
-    ResImax(iter)   = CP;
+    
+                %%%% Atualiza o Criterio de Parada %%%%
+    CP1  = max(max(ResI.^2)); 
+    if iter >= 5
+        CP2 = ResG(iter)/ResG(5);
+    end
+    ResImax(iter)   = CP1;
+    ResN(iter)      = CP2;
 end
-tempo_tdma = toc;
+Res         =[ResImax, ResN]
+tempo_tdma  = toc;
 
 end
