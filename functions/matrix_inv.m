@@ -1,4 +1,14 @@
-%% Solução pela inversa
+%% Build global matrix
+%{
+INSTRUCOES:
+------------
+Para utilizar essa função no MATLAB do terminal remoto da USFC este
+arquivo de função <tdma2d.m> deve ser copiado para o seguinte 
+diretório:
+
+/Este Computador/Documentos/MATLAB/
+
+%}
 function M = matrix_inv(ap, an, as, aw, ae)
 
 [nr, nx] = size(ap);

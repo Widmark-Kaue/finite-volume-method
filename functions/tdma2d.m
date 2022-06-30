@@ -1,4 +1,4 @@
-%% TDMA
+%% TDMA (Tri Diagonal Matrix Algorithm)
 %{
 INSTRUCOES:
 ------------
@@ -103,7 +103,7 @@ while(CP1 >= tol || CP2 >= tol)
     ResImax(iter)   = CP1;
     ResN(iter)      = CP2;
 end
-Res         =[ResImax, ResN]
+Res         =[ResImax; ResN];
 tempo_tdma  = toc;
-
+%adicionar método de parada por número de iteraçao
 end
