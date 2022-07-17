@@ -1,4 +1,4 @@
-%% TDMA (Tri Diagonal Matrix Algorithm)
+%% TDMA
 %{
 INSTRUCOES:
 ------------
@@ -8,18 +8,50 @@ diretório:
 
 /Este Computador/Documentos/MATLAB/
 
+DEFINIÇÕES:
+-----------
+A       = struct(ap, an, as, aw, ae) - Coeficientes 
+Su      = matrix                     - Termo fonte
+phi     = matrix                     - Campo inicial
+Tt      = struct(Ap0, theta)         - Parâmetros para Regime transiente 
 %}
-function [phi,iter, Res, tempo_tdma] = tdma2d(ap,an,as,aw,ae,Su)
+function [phi,iter, Res, tempo_tdma] = tdma2d(A,Su,phi,Tt)
 tic
+
+% Coeficientes
+ap = A.ap; 
+an = A.an; as = A.as;
+aw = A.aw; ae = A.ae;
+
 [row, col] = size(ap);
+
+
+% Campo inicial e Regime transiente
+theta = 1;
+phi_0 = zeros(row,col); 
+switch nargin
+    case 2 % Incializacao do campo da propriedade phi
+        phi     = zeros(row, col);
+        
+    case 4 % Termos transientes
+        phi_0   = phi;
+        Su      = Su + Tt.Ap0.*phi_0; 
+        theta   = Tt.theta;
+end
+
+%{ 
+iterações maximas
+if ~exist('varargin','var')
+    iter_max = 3000;
+else
+    iter_max = varargin{1};
+end
+%}
 
 % Coeficientes do TDMA
 Aj = zeros(row,col);
 Cj = zeros(row,col);
 Clj= zeros(row,col);
-
-% Incializacao do campo da propriedade phi
-phi = zeros(row, col);
 
 % Iniciando os residuos e iteracoes
 ResG     = [];                  % Global
@@ -27,6 +59,7 @@ ResI     = zeros(row,col);      % Matriz de residuo local
 iter     = 0; 
 ResImax  = []; 
 ResN     = [];
+
 % Tolerancia do TDMA
 mi_ap = min(min(ap));
 if mi_ap < 1
@@ -42,13 +75,13 @@ while(CP1 >= tol || CP2 >= tol)
         if i == 1                   % Extremo Norte da Malha
             phi_n   = 0;
         else 
-            phi_n = phi(i - 1,:);    
+            phi_n = phi(i - 1,:)*theta + (1-theta)*phi_0(i - 1,:);    
         end
         
         if i == row                 % Extremo Sul da Malha
             phi_s = 0;
         else
-            phi_s = phi(i + 1,:);
+            phi_s = phi(i + 1,:)*theta  + (1-theta)*phi_0(i+1,:);
         end   
         
         Cj(i,:) =  Su(i,:) + an(i,:).*phi_n + as(i,:).*phi_s;
@@ -62,7 +95,7 @@ while(CP1 >= tol || CP2 >= tol)
                 Ajlast  = 0;
                 Cljlast = 0;
             else                   
-                phi_w   = phi(i,j-1);
+                phi_w   = phi(i,j-1)*theta + (1-theta)*phi_0(i,j-1);
                 Cljlast = Clj(i,j-1);
                 Ajlast  = Aj(i,j-1);
             end
@@ -70,7 +103,7 @@ while(CP1 >= tol || CP2 >= tol)
             if j == col             % Extremo Leste da Malha
                 phi_e = 0;
             else
-                phi_e = phi(i,j+1);
+                phi_e = phi(i,j+1)*theta + (1-theta)*phi_0(i,j+1);
             end
             
                     %%%% foward elimination %%%%
