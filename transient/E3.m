@@ -13,8 +13,8 @@ L   = 0.5;              %[m]
 alpha  = 1;             %[m^2/s]
 
 % Boundary conditions
-T1  = 0     + 273;      %[K]
-T2  = 100   + 273;      %[K]
+T1  = 0  ;      %[K]
+T2  = 100;      %[K]
 
 %% -------------------------------MFV-------------------------------------
 %% Mesh
@@ -28,8 +28,8 @@ dx = L/nx;
 dy = W/ny;
 
 %% Time Step
-endTime = 100;          %[s] 
-dt      = 1;           %[s]
+endTime = 10;          %[s] 
+dt      = 0.1;           %[s]
 
 theta   = 1;
 if theta ~=1
@@ -44,19 +44,19 @@ end
 
 row = ny; col = nx;
 
-aw = repmat(dy*dt/dx, row, col); 
+aw = repmat(dy/dx, row, col); 
 aw(:,1)     = 0;
 
-ae = repmat(dy*dt/dx, row, col);
+ae = repmat(dy/dx, row, col);
 ae(:,col)   = 0;
 
-as = repmat(dx*dt/dy, row, col);
+as = repmat(dx/dy, row, col);
 as(row,:)   = 0;
 
-an = repmat(dx*dt/dy, row, col);
+an = repmat(dx/dy, row, col);
 an(1,:)     = 0;
 
-ap0 = repmat(dx*dy/alpha, row, col);
+ap0 = repmat(dx*dy/alpha/dt, row, col);
 ap0(1,:)    = ap0(1,:)/2;
 ap0(row,:)  = ap0(row,:)/2;
 ap0(:,1)    = ap0(:,1)/2;
@@ -89,7 +89,7 @@ T_td = [];
 for t=1:endTime/dt
     t
     if t == 1
-        [T_td(:,:,t),iter, ResImax, tempo] = tdma2d(A,Su);
+        T_td(:,:,t) = tdma2d(A,Su);
     else
         T_td(:,:,t) = tdma2d(A,Su,T_td(:,:,t-1),Tt);
         
@@ -136,7 +136,7 @@ ylabel('y [m]')
 
 %% Teste plot
 tam = size(T_td);
-T2  = T_td - 273;
+T2  = T_td;
 x   = 0:nx/2:W*1e2;
 y   = 0:ny/2:L*1e2; 
 figure
