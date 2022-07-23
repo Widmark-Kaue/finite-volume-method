@@ -39,15 +39,6 @@ switch nargin
         theta   = Tt.theta;
 end
 
-%{ 
-iterações maximas
-if ~exist('varargin','var')
-    iter_max = 3000;
-else
-    iter_max = varargin{1};
-end
-%}
-
 % Coeficientes do TDMA
 Aj = zeros(row,col);
 Cj = zeros(row,col);
@@ -56,9 +47,11 @@ Clj= zeros(row,col);
 % Iniciando os residuos e iteracoes
 ResG     = [];                  % Global
 ResI     = zeros(row,col);      % Matriz de residuo local
-iter     = 0; 
 ResImax  = []; 
 ResN     = [];
+
+iter     = 0; 
+itermax  = 1e4; 
 
 % Tolerancia do TDMA
 mi_ap = min(min(ap));
@@ -69,7 +62,7 @@ else
 end
 CP1  = 1; % Criterio de Parada 
 CP2  = 1;
-while(CP1 >= tol || CP2 >= tol)
+while((CP1 >= tol || CP2 >= tol) && iter < itermax)
         %%%% Varredura linha-a-linha da malha sentido: Norte->Sul %%%%
     for i=1:row        
         if i == 1                   % Extremo Norte da Malha
