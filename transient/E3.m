@@ -19,8 +19,8 @@ T2  = 100;      %[K]
 %% -------------------------------MFV-------------------------------------
 %% Mesh
 % Number of VC's
-nx = 10; 
-ny = 10; 
+nx = 20; 
+ny = 20; 
 vc = nx*ny; % total
 
 % Length of VC's
@@ -28,20 +28,26 @@ dx = L/nx;
 dy = W/ny;
 
 %% Time Step
-endTime = 10;          %[s] 
-dt      = 0.1;           %[s]
+endTime = 0.1;          %[s] 
+dt0     = 0.001;        %[s]
 
-theta   = 1;
-if theta ~=1
-    aux1 = dx*dy;
-    aux2 = (dy/dx + dx/dy);
-    aux3 = (1-theta);
-    aux4 = 2*alpha;
-    dt = 0.5*aux1/aux2/aux3/aux4;
-end
+theta   = [1 0.5 0]; 
+% theta = 
+%   1     - fully impicit scheme
+%   0.5   - Crank-Nicolson scheme
+%   0     - Explicit scheme 
+
+
+% dt for theta != 1
+aux1 = dx*dy;
+aux2 = (dy/dx + dx/dy);
+aux3 = @(th) (1-th);
+aux4 = 2*alpha;
+
+fdt = @(th) 0.5*aux1/aux2/aux3(th)/aux4;
+
 
 %% Coefficients matrix - CDS
-
 row = ny; col = nx;
 
 aw = repmat(dy/dx, row, col); 
@@ -56,14 +62,32 @@ as(row,:)   = 0;
 an = repmat(dx/dy, row, col);
 an(1,:)     = 0;
 
-ap0 = repmat(dx*dy/alpha/dt, row, col);
-ap0(1,:)    = ap0(1,:)/2;
-ap0(row,:)  = ap0(row,:)/2;
-ap0(:,1)    = ap0(:,1)/2;
-ap0(:,col)  = ap0(:,col)/2;
 
-ap = (aw + ae + as + an)*theta + ap0;
-Ap0= ap0 - (aw + ae + as + an).*(1-theta);
+ap0 = {};
+ap  = {};
+Ap0 = {};
+for i=1:length(theta)
+    
+    if theta(i)~=1
+        ap0{i} = repmat(dx*dy/alpha/fdt(theta(i)), row, col);
+    else
+        ap0{i} = repmat(dx*dy/alpha/dt0, row, col);
+    end
+    ap0{i}(1,:)    = ap0{i}(1,:)/2;
+    ap0{i}(row,:)  = ap0{i}(row,:)/2;
+    ap0{i}(:,1)    = ap0{i}(:,1)/2;
+    ap0{i}(:,col)  = ap0{i}(:,col)/2;
+    
+    
+    ap{i} = (aw + ae + as + an)*theta(i) + ap0{i};
+    Ap0{i}= ap0{i} - (aw + ae + as + an).*(1-theta(i));
+    
+                                 %-Sp
+    ap{i}(1,:)     = ap{i}(1,:)  + 2*dx/dy * theta(i);
+    ap{i}(row,:)   = ap{i}(row,:)+ 2*dx/dy * theta(i);
+    ap{i}(:,1)     = ap{i}(:,1)  + 2*dy/dx * theta(i);
+    ap{i}(:,col)   = ap{i}(:,col)+ 2*dy/dx * theta(i);
+end
 
 %Boundary Conditions Aplication
 Su = zeros(row, col);
@@ -72,34 +96,48 @@ Su(1,:)     = 2*T2*dx/dy;
 Su(row,:)   = Su(row,:)+ 2*T1*dx/dy;
 Su(:,1)     = Su(:,1)  + 2*T1*dy/dx;
 Su(:,col)   = Su(:,col)+ 2*T1*dy/dx;
-                                
-                       %-Sp
-ap(1,:)     = ap(1,:)  + 2*dx/dy * theta;
-ap(row,:)   = ap(row,:)+ 2*dx/dy * theta;
-ap(:,1)     = ap(:,1)  + 2*dy/dx * theta;
-ap(:,col)   = ap(:,col)+ 2*dy/dx * theta;
-
-%Packed
-A   = struct('ap',ap,'an',an,'as',as,'aw',aw, 'ae', ae);
-Tt  = struct('Ap0',Ap0,'theta',theta); 
+               
 
 %% -------------------------------SOLVE------------------------------------
 %% Solve - TDMA method
-T_td = [];
-for t=1:endTime/dt
-    t
-    if t == 1
-        T_td(:,:,t) = tdma2d(A,Su);
+T_td        = {};
+tol_tr      = 1e-3;
+tempo       = [];
+
+for i=1:length(theta)
+    tic
+    %Packed
+    A   = struct('ap',ap{i},'an',an,'as',as,'aw',aw, 'ae', ae);
+    Tt  = struct('Ap0',Ap0{i},'theta',theta(i)); 
+   
+    % TDMA iterative initial
+    fprintf('################### THETA = %f ####################\n', theta(i))
+    if theta(i) ~= 1
+        dt = fdt(theta(i));
     else
-        T_td(:,:,t) = tdma2d(A,Su,T_td(:,:,t-1),Tt);
-        
-        res = max(max((T_td(:,:,t) - T_td(:,:,t-1)).^2));
-        %{
-            if res < 1e-3
-            break
-            end
-        %}
+        dt = dt0;
     end
+    sq_res      = [1];
+    res         = [1]; 
+    for t=1:endTime/dt
+        fprintf('---------------- Step: %d ----------------\n', t)
+        fprintf('Step time: %f\n',dt*t);
+        if t == 1
+            [T_td{i}(:,:,t),iter] = tdma2d(A,Su);
+        else
+            [T_td{i}(:,:,t),iter] = tdma2d(A,Su,T_td{i}(:,:,t-1),Tt);
+
+            sq_res(t) = max(max((T_td{i}(:,:,t) - T_td{i}(:,:,t-1)).^2));
+            res(t)    = sum(sum(abs(T_td{i}(:,:,t) - T_td{i}(:,:,t-1))));
+            if sq_res(t) < tol_tr
+                fprintf('CONVERGIU!')
+                break
+            end
+        end
+        fprintf('Iterarions: %d\n',iter);
+        fprintf('Residue: %f\n', sq_res(t));
+    end
+    tempo(i) = toc;
 end
 %% Solve - Analitic
 T = zeros(row,col);
@@ -124,81 +162,98 @@ y_cont = row;
 x_cont = x_cont -1;
 end
 %% ------------------------------RESULTS----------------------------------
-%% Plot Solução pela inversa
-Temp_fig = figure('Units','normalized');
-imagesc(reshape(T_inv,row,col)')
-colorbar;
-axis ij;
-
-title('Temperatura (ºC) - Inversão de matriz')
-xlabel('x [m]')
-ylabel('y [m]')
-
-%% Teste plot
-tam = size(T_td);
-T2  = T_td;
+%% plot temperature field - theta = 1
+tam = size(T_td{1});
+T2  = T_td{1};
 x   = 0:nx/2:W*1e2;
 y   = 0:ny/2:L*1e2; 
-figure
 for i=1:tam(end)
+    figure
     imagesc(x,y,T2(:,:,i));
-    title(['Distribuição de temperatura (t = ', num2str(i), 's )'])
+    title(['Distribuição de temperatura (t = ', num2str(i*dt0), 's ) - \theta = 1'])
     xlabel('Largura [cm]')
     ylabel('Altura [cm]')
     colorbar;
     anima(i) = getframe;
 end
-%%
-%% Plot Solução TDMA
-Temp_fig = figure('Units','normalized');
-imagesc(reshape(phi',row,col)')
-colorbar;
-axis ij;
-title('Temperatura (ºC) - TDMA');
-xlabel('x [m]');
-ylabel('y [m]');
 
-Temp_fig = figure('Units','normalized');
-plot(1:iter,ResG,'b')
-title('Evolução do residuo Global');
-xlabel('Iterações');
-ylabel('Residuo Global');
-grid()
+%% plot temperature field - theta = 0.5
+tam = size(T_td{2});
+T2  = T_td{2};
+x   = 0:nx/2:W*1e2;
+y   = 0:ny/2:L*1e2; 
+figure
+for i=1:tam(end)
+    imagesc(x,y,T2(:,:,i));
+    title(['Distribuição de temperatura (t = ', num2str(i*dt0), 's ) - \theta = 0.5'])
+    xlabel('Largura [cm]')
+    ylabel('Altura [cm]')
+    colorbar;
+    anima(i) = getframe;
+end
+%% plot temperature field - theta = 0
+tam = size(T_td{3});
+T2  = T_td{3};
+x   = 0:nx/2:W*1e2;
+y   = 0:ny/2:L*1e2; 
+figure
+for i=1:tam(end)
+    imagesc(x,y,T2(:,:,i));
+    title(['Distribuição de temperatura (t = ', num2str(i*dt0), 's ) - \theta = 0'])
+    xlabel('Largura [cm]')
+    ylabel('Altura [cm]')
+    colorbar;
+    anima(i) = getframe;
+end
+%% plot convergence
 
-Temp_fig = figure('Units','normalized');
-plot(1:iter,ResImax)
-title('Evolução do máximo residuo local quadrático');
-xlabel('Iterações');
-ylabel('Residuo Local ao quadrado');
-grid()
+forms = ['k', 'b', 'r']
+figure
+hold on
+for i=1:length(theta)
+    tam = size(T_td{i});
+    T3  = T_td{i};
+    
+    x = [];
+    y = [];
+    if i==1
+        dt = dt0;
+    else
+        dt = fdt(theta(i));
+    end
+    for j=1:tam(end)
+        y(j) = sum(T3(1,:,j))/nx;
+        x(j) = j*dt;
+    end
+    plot(x, y, forms(i), 'LineWidth',2)
+end
+legend('\theta = 1', '\theta = 0.5', '\theta = 0')
+title('Temperatura média na superfície superior')
+xlabel('Tempo [s]')
+ylabel('Temperatura [ºC]')
+grid
+hold off
 
-%% Plot Solução Analítica
-Temp_fig = figure('Units','normalized');
-imagesc(reshape(T',row,col));
-colorbar;
-axis ij;
-title('Solução analítica');
-xlabel('x [m]');
-ylabel('y [m]');
-%% Plot Erro com Analítica
-Temp_fig = figure('Units','normalized');
-erro = reshape(T',row,col) - phi;
-imagesc(erro)
-colorbar;
-axis ij;
-title('Erro TDMA x Solução Analítica');
+%% plot convergence -  theta = 1
+figure
 
-Temp_fig = figure('Units','normalized');
-erro = reshape(T_inv,row,col)' - phi;
-imagesc(erro)
-colorbar;
-axis ij;
-title('Erro TDMA x Solução Inversa');
+tam = size(T_td{1});
+T3  = T_td{1};
 
+a = sum(T(1,:));
+A = a*ones(1,length(tam));
+x = [];
+y = [];
+for j=1:tam(end)
+    y(j) = sum(T3(1,:,j))/nx;
+    x(j) = j*dt;
+end
 
-
-
-
-
-
-
+plot(x,A,'r--','LineWidth',2)
+plot(x, y, 'k', 'LineWidth',2)
+legend('\theta = 1')
+title('Temperatura média na superfície superior')
+xlabel('Tempo [s]')
+ylabel('Temperatura [ºC]')
+grid
+hold off
