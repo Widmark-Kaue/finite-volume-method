@@ -1,0 +1,77 @@
+1) Caracterização do problema
+	Com o desenvolvimento da tecnologia metodologias para a mitigação da poluição ambiental vem atraindo a atenção de grande parte do mundo. Uma das medidas adotadas é a substituição de veículos movidos a combustível por veículos elétricos.
+	Nesse contexto, o pack de bateria é um dos principais componentes de carros elétricos. Visto que elas possuem uma faixa de temperatura de operação ótima (entre 20 e 45 °C), é de suma importância desenvolver medidas de gerenciamento térmico das baterias.
+	Por conta das reações químicas internas a baterias, há uma produção muito grande de calor e que, caso não haja um dispositivo adequado de refrigeração, pode acarretar em falhas no sistema e até acidentes de segurança.
+	Atualmente, várias medidas de resfriamento de baterias estão sendo estudadas: resfriamento a ar, resfrigeração líquida, resfriamento do material de mudança de fase e resfriamento do tubo de calor. Entre elas, o resfriamento por fluxo de ar é especialmente atrativo por conta da sua estrutura simples, baixo custo e não possuir vazamentoe e incremento de peso.
+	Alguns fatores que influênciam a performance do resfriamento por fluxo de calor são:
+		1. Modo de ventilação
+			Série
+			Paralela
+			Fluxo de ar estratificado
+			Ar unidirecional
+			Fluxo alternativo
+		2. Espaçamento entre as baterias
+			Horizontal
+			Longitudinal
+		3. Otimização da arquitetura do BTMS
+			Tipo J
+			Tipo U
+			Tipo Z
+			Adição de spoiler
+		4. Parâmetros estruturais
+			Localização da entrada e saída
+			Layout da entrada e saída
+			Saída secundária
+				Qtd
+				Posição
+				Largura
+			Entrada secundária
+
+2) Objetivo do trabalho
+	No estudo em questão foi desenvolvido um modelo refrigerado a ar paralelo tipo Z com saídas secundárias de quantidade indefinidas. 
+	Com auxílio do CFD foram investigadas as influências da posição, número e largura das saídas secundárias no desempenho da refrigeração BTMS.
+	Desse modo, de acordo com a distribuição de temperatura das células de bateria, um modelo ideal de BTMS de acordo com os critérios acima será otimizado utilizando defletores em alguns canais de resfriamento para melhorar a uniformidade da temperatura.
+	Foi utilizado uma bateria de ion-lítio.
+	
+3) Metodologia
+	O estudo em questão utilizou duas distribuições da ANSYS, uma para modelar a malha (ICEM) e outro para as simulações fluidodinâmica (Fluent).
+	
+	3.1 MALHA
+	O ANSYS ICEM é um módulo de geração de malha capaz de gerar malhas estruturadas e não estutruturadas tetraédricas e hexaédricas.
+	Foi gerado uma malha estruturada com refino na região da parede para os efeitos da camada limite. No modelo em questão o fluxo de ar é turbulento, desse modo o y+ deve está próximo de 1.
+	Além disso, a altura da primeira linha da divisão da malha foi definida como 0.1 mm para facilitar os cálculos das simulações subsequentes e garantir a precisão da simulação 
+	Foi realizado um teste de refino de malha do modelo para definir a quantidade de volumes que seriam utilizados. Os pesquisadores chegaram num valor que garantia precisão e que reduziu o custo computacional de 1,05x10⁶.
+	
+	3.2 CFD
+	Foi utilizado o método de volumes finitos através do software comercial ANSYS Fluent para calcular os campos de velocidade e de temperatura do BTMS. 
+	Como o escoamento é turbulento foi adotado o modelo k-epsilon de turbulência para simular a circulação do escoamento no sistemas. 
+	As equações governantes a serem resolvidas são as equações de Navier-Stokes, a conservação da massa e a equação da conservação da energia.
+	As baterias foram definidas como sólido e material foi definido como lítio.
+	As condições de contorno utilizadas para definir o problema foram:
+		1. V_inlet 	= 4 m/s  
+		2. V_outlet 	= V_atmosférica
+		3. T_ambient 	= 25°C
+		4. T_inlet 	= T_ambiente
+		5. Condição de não escorregamento nas paredes.
+		6. Paredes adiabáticas
+		7. Função parede (y+ pequeno)
+	Foi utilizado o algoritmo SIMPLE para resover o problema de acoplamento pressão velocidade.
+	A discretização das equações governantes foram feitas utilizando o esquema de segunda Upwind e o valor do resíduo para convergência foi setado em 10⁻⁶
+
+4) Resultados
+	4.1 Validação do modelo
+	Para validar o modelo de simulação foi montada uma bancada experimental substituindo o que seriam as baterias por pedaços de alumínio com as mesmas dimensões com geradores de calor acoplados.
+	Os resultado foram satisfatórios
+	Erro máximo ficou em 2,6%
+	
+	4.2 Análise do número de saídas secundárias
+	Foi mostrado que quanto maior o número de saídas secundárias melhor o desempenho do BTMS em resfriar o pack de baterias.
+	
+	4.3 Efeito das Larguras das saídas
+	Foram realizados testes variando as saídas secundárias para cada bateria.
+	Foi percebido que para algumas baterias o aumento da largura auxiliou no resfriamento enquanto que para outras prejudicou. Notou-se um comportamento mais complexo em relação esse fenômeno.	
+	 
+		
+		
+		
+		
