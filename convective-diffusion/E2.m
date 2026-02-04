@@ -1,6 +1,6 @@
 %% Head
 clc; 
-clear all; 
+clear all;
 close all;
 format short eng;
 
